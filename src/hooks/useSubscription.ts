@@ -14,6 +14,7 @@ interface UserSubscription {
     description: string;
     next_due_date: string;
     status: string;
+    billing_type: string;
   };
 }
 
@@ -34,7 +35,8 @@ export const useSubscription = (user: User | null) => {
 
   const checkSubscription = async () => {
     try {
-      const { data, error } = await supabase
+      // First, try to find an active subscription
+      let { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
@@ -42,7 +44,8 @@ export const useSubscription = (user: User | null) => {
             value,
             description,
             next_due_date,
-            status
+            status,
+            billing_type
           )
         `)
         .eq('user_id', user?.id)
@@ -73,7 +76,31 @@ export const useSubscription = (user: User | null) => {
             .eq('id', data.id);
         }
       } else {
-        setSubscription(null);
+        // No active subscription found, try to find the most recent expired subscription
+        // This is needed for the renewal screen to show subscription details
+        const { data: expiredData, error: expiredError } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            monthly_fee:monthly_fee_id (
+              value,
+              description,
+              next_due_date,
+              status,
+              billing_type
+            )
+          `)
+          .eq('user_id', user?.id)
+          .in('status', ['EXPIRED', 'CANCELLED'])
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (expiredData && !expiredError) {
+          setSubscription(expiredData);
+        } else {
+          setSubscription(null);
+        }
         setHasAccess(false);
       }
     } catch (error) {

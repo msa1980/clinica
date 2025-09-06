@@ -36,7 +36,7 @@ Para notificações automáticas de pagamentos:
 1. Vá para **Configurações** > **Integração** > **Webhooks**
 2. Clique em **Novo Webhook**
 3. Configure:
-   - **URL**: `https://seusite.com/api/webhooks/asaas`
+   - **URL**: `https://http://192.168.0.73:8083/api/webhooks/asaas`
    - **Eventos**: `PAYMENT_RECEIVED`, `PAYMENT_OVERDUE`, `SUBSCRIPTION_CANCELED`
 4. Salve as configurações
 
