@@ -17,6 +17,9 @@ import { DigitalMedicalRecordTab } from "@/components/DigitalMedicalRecordTab";
 import { ReportsTab } from "@/components/ReportsTab";
 import { ProceduresTab } from "@/components/ProceduresTab";
 import { MonthlyFeeTab } from "@/components/MonthlyFeeTab";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Clock } from "lucide-react";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -28,6 +31,7 @@ const Dashboard = () => {
   const [isReportsOpen, setIsReportsOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isViewAppointmentOpen, setIsViewAppointmentOpen] = useState(false);
+  const { subscription } = useSubscription(user);
 
   useEffect(() => {
     const getUser = async () => {
@@ -202,6 +206,20 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Subscription Warning */}
+        {subscription && (
+          <div className="mb-6">
+            <Alert className="border-orange-200 bg-orange-50">
+              <Clock className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Atenção:</strong> Sua mensalidade vence em{" "}
+                {new Date(subscription.monthly_fee.next_due_date).toLocaleDateString('pt-BR')}.
+                Valor: R$ {subscription.monthly_fee.value.toFixed(2)}
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         <Tabs defaultValue="dashboard" className="w-full">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>

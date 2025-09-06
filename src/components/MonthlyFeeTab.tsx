@@ -219,6 +219,24 @@ const MonthlyFeeTab = () => {
 
       if (insertError) throw insertError;
 
+      // Associate subscription with current user for access control
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: userSubError } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            monthly_fee_id: newFeeData.id,
+            status: 'ACTIVE',
+            expires_at: format(nextDueDate, 'yyyy-MM-dd')
+          });
+
+        if (userSubError) {
+          console.error('Error creating user subscription:', userSubError);
+          // Don't throw error here, monthly fee was created successfully
+        }
+      }
+
       // Add to local state
       const newFee: MonthlyFee = {
         id: newFeeData.id,

@@ -74,11 +74,30 @@ npm install axios
 ## 🔧 Passo 3: Configuração do Banco de Dados
 
 ### 3.1 Executar Migração
-1. Abra o terminal no diretório do projeto
-2. Execute:
+
+#### Opção 1: Via Supabase CLI (Recomendado)
+1. Instale o Supabase CLI:
+```bash
+npm install -g supabase
+```
+
+2. Vincule o projeto:
+```bash
+npx supabase link --project-ref mfjbiegkkjdswvujscdq
+```
+
+3. Execute a migração:
 ```bash
 npx supabase db push
 ```
+
+#### Opção 2: Via Painel Supabase (Alternativa)
+1. Acesse [https://supabase.com/dashboard](https://supabase.com/dashboard)
+2. Selecione seu projeto
+3. Vá para **SQL Editor**
+4. Copie e execute o conteúdo do arquivo `supabase/migrations/monthly_fees_setup.sql`
+
+**Nota**: A migração foi corrigida para usar uma política RLS simples baseada apenas na autenticação do usuário.
 
 ### 3.2 Verificar Tabela Criada
 Acesse o painel do Supabase e confirme que a tabela `monthly_fees` foi criada com as seguintes colunas:
@@ -191,7 +210,16 @@ npm run preview
 - Verificar status da conta Asaas
 
 ### Problema: "Tabela monthly_fees não encontrada"
-**Solução**: Execute `npx supabase db push` novamente
+**Solução**: Execute `npx supabase db push` novamente ou use o SQL Editor do Supabase
+
+### Problema: "relation 'user_clinic_access' does not exist"
+**Solução**: Este erro foi corrigido na migração atualizada. Use a versão mais recente do arquivo `supabase/migrations/001_create_monthly_fees.sql` que usa uma política RLS simplificada.
+
+### Problema: "Cannot find project ref. Have you run supabase link?"
+**Solução**:
+1. Instale o Supabase CLI: `npm install -g supabase`
+2. Vincule o projeto: `npx supabase link --project-ref mfjbiegkkjdswvujscdq`
+3. Execute novamente: `npx supabase db push`
 
 ---
 
@@ -211,9 +239,33 @@ Para suporte técnico:
 - [ ] Chave API obtida
 - [ ] Arquivo `.env` configurado
 - [ ] Dependências instaladas (`npm install axios`)
-- [ ] Migração do banco executada
+- [ ] **Migração do banco executada** (arquivo corrigido sem erro `user_clinic_access`)
 - [ ] Sistema testado localmente
 - [ ] Configuração de produção realizada
 - [ ] Webhooks configurados (opcional)
+- [ ] **Controle de acesso por assinatura habilitado**
+- [ ] **Bloqueio automático configurado**
+- [ ] **Avisos no dashboard ativados**
+- [ ] **Botão de renovação na tela de bloqueio**
+- [ ] **Geração automática de links de pagamento**
+
+**Nota**: O erro `user_clinic_access` foi corrigido na migração atualizada.
+
+### 6.4 Renovação Direta de Assinaturas
+A tela de bloqueio agora inclui um botão para renovação imediata:
+
+- ✅ **Botão "Renovar Assinatura Agora"**: Gera link de pagamento automaticamente
+- ✅ **Integração Asaas**: Cria nova cobrança sem intervenção manual
+- ✅ **Link de pagamento**: Abre checkout do Asaas em nova aba
+- ✅ **Restauração automática**: Acesso liberado após confirmação do pagamento
+- ✅ **Fallback gracioso**: Sistema funciona mesmo sem webhooks configurados
+
+### 6.3 Controle de Acesso por Assinatura
+O sistema agora inclui controle de acesso baseado no status da mensalidade:
+
+- ✅ **Bloqueio automático**: Usuários com assinatura expirada são impedidos de acessar o dashboard
+- ✅ **Tela de bloqueio**: Interface amigável informando sobre assinatura expirada
+- ✅ **Avisos no dashboard**: Notificações sobre vencimento próximo
+- ✅ **Associação automática**: Quando uma mensalidade é criada, ela é automaticamente associada ao usuário atual
 
 **🎉 Configuração concluída! O sistema de pagamentos está pronto para uso.**
