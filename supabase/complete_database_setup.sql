@@ -81,8 +81,18 @@ CREATE POLICY "Users can access patients" ON patients
 CREATE POLICY "Users can access monthly fees" ON monthly_fees
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Users can access their own subscriptions" ON user_subscriptions
-  FOR ALL USING (auth.uid() = user_id);
+-- Create policy for user_subscriptions (if not exists)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'user_subscriptions' 
+    AND policyname = 'Users can access their own subscriptions'
+  ) THEN
+    CREATE POLICY "Users can access their own subscriptions" ON user_subscriptions
+      FOR ALL USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -102,9 +112,20 @@ CREATE TRIGGER update_monthly_fees_updated_at
   BEFORE UPDATE ON monthly_fees
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_user_subscriptions_updated_at
-  BEFORE UPDATE ON user_subscriptions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Criar trigger para atualizar updated_at automaticamente (se não existir)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.triggers 
+        WHERE trigger_name = 'update_user_subscriptions_updated_at' 
+        AND event_object_table = 'user_subscriptions'
+    ) THEN
+        CREATE TRIGGER update_user_subscriptions_updated_at
+            BEFORE UPDATE ON user_subscriptions
+            FOR EACH ROW
+            EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
 -- Insert sample data for testing (optional)
 -- Uncomment the lines below if you want to add test data

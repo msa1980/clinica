@@ -141,6 +141,33 @@ export class AsaasService {
       throw error;
     }
   }
+
+  static async createPayment(data: {
+    customer: string;
+    billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX' | 'UNDEFINED';
+    value: number;
+    dueDate: string;
+    description?: string;
+    externalReference?: string;
+  }): Promise<any> {
+    try {
+      const response = await asaasApi.post('/payments', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating Asaas payment:', error);
+      throw error;
+    }
+  }
+
+  static async getPayment(paymentId: string): Promise<any> {
+    try {
+      const response = await asaasApi.get(`/payments/${paymentId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting Asaas payment:', error);
+      throw error;
+    }
+  }
 }
 
 export default AsaasService;

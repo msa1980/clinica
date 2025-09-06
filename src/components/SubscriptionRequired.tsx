@@ -5,7 +5,7 @@ import { AlertTriangle, CreditCard, Calendar, DollarSign, RefreshCw } from "luci
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AsaasService from "@/integrations/asaas/client";
 
 interface SubscriptionRequiredProps {
@@ -17,6 +17,10 @@ const SubscriptionRequired = ({ subscription }: SubscriptionRequiredProps) => {
   const { toast } = useToast();
   const [isGeneratingPayment, setIsGeneratingPayment] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log('Payment URL changed:', paymentUrl);
+  }, [paymentUrl]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -31,110 +35,17 @@ const SubscriptionRequired = ({ subscription }: SubscriptionRequiredProps) => {
     }
   };
 
-  const handleRenewSubscription = async () => {
-    if (!subscription) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível encontrar os dados da assinatura.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGeneratingPayment(true);
-
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      // Get or create Asaas customer
-      let asaasCustomerId = null;
-
-      // Check if user has Asaas customer ID in dados_cliente
-      const { data: existingCustomer } = await supabase
-        .from('dados_cliente')
-        .select('asaas_customer_id')
-        .eq('email', user.email)
-        .single();
-
-      if (existingCustomer?.asaas_customer_id) {
-        asaasCustomerId = existingCustomer.asaas_customer_id;
-      } else {
-        // Create new customer in Asaas
-        const asaasCustomer = await AsaasService.createCustomer({
-          name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
-          email: user.email || '',
-          cpfCnpj: "00000000000", // This should be collected during registration
-          personType: 'FISICA'
-        });
-        asaasCustomerId = asaasCustomer.id;
-
-        // Save Asaas customer ID
-        await supabase
-          .from('dados_cliente')
-          .upsert({
-            email: user.email,
-            nome: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
-            asaas_customer_id: asaasCustomerId
-          });
-      }
-
-      if (!asaasCustomerId) {
-        throw new Error("Não foi possível criar o cliente no Asaas");
-      }
-
-      // Calculate next due date (1 month from now)
-      const nextDueDate = new Date();
-      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-
-      // Create subscription renewal
-      const asaasSubscription = await AsaasService.createSubscription({
-        customer: asaasCustomerId,
-        billingType: subscription.monthly_fee.billing_type || 'BOLETO',
-        value: subscription.monthly_fee.value,
-        nextDueDate: nextDueDate.toISOString().split('T')[0],
-        description: `Renovação: ${subscription.monthly_fee.description}`,
-        cycle: 'MONTHLY'
-      });
-
-      // Note: Database update will be handled by webhook or manual sync
-      // For now, we just generate the payment link
-
-      // Generate payment link
-      if (asaasSubscription.paymentLink) {
-        setPaymentUrl(asaasSubscription.paymentLink);
-        toast({
-          title: "Link de pagamento gerado!",
-          description: "Clique no botão abaixo para realizar o pagamento.",
-        });
-      } else {
-        // If no payment link, redirect to Asaas dashboard or show success message
-        toast({
-          title: "Renovação solicitada!",
-          description: "Aguarde a confirmação do pagamento para restaurar o acesso.",
-        });
-        // Refresh the page to check subscription status
-        setTimeout(() => window.location.reload(), 2000);
-      }
-
-    } catch (error) {
-      console.error('Error renewing subscription:', error);
-      toast({
-        title: "Erro na renovação",
-        description: "Não foi possível processar a renovação. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingPayment(false);
-    }
+  const handleRenewSubscription = () => {
+    console.log('Redirecting to payment page...');
+    navigate('/payment');
   };
 
   const handlePayNow = () => {
+    console.log('Pay Now button clicked, paymentUrl:', paymentUrl);
     if (paymentUrl) {
       window.open(paymentUrl, '_blank');
+    } else {
+      console.error('No payment URL available');
     }
   };
 

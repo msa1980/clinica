@@ -35,6 +35,9 @@ export const useSubscription = (user: User | null) => {
 
   const checkSubscription = async () => {
     try {
+      console.log('🔍 Checking subscription for user:', user?.id);
+      console.log('🔑 Auth session:', await supabase.auth.getSession());
+      
       // First, try to find an active subscription
       let { data, error } = await supabase
         .from('user_subscriptions')
@@ -52,8 +55,19 @@ export const useSubscription = (user: User | null) => {
         .eq('status', 'ACTIVE')
         .single();
 
+      console.log('📊 Active subscription query result:', { data, error });
+      
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error checking subscription:', error);
+        console.error('❌ Error checking active subscription:', error);
+        
+        // Check if it's a 406 error (table doesn't exist)
+        if (error.message.includes('406') || error.message.includes('Not Acceptable') || error.message.includes('user_subscriptions')) {
+          console.warn('⚠️ Table user_subscriptions does not exist. Please run the database migration.');
+          setHasAccess(false);
+          setSubscription(null);
+          return;
+        }
+        
         setHasAccess(false);
         setSubscription(null);
         return;
@@ -95,6 +109,18 @@ export const useSubscription = (user: User | null) => {
           .order('updated_at', { ascending: false })
           .limit(1)
           .single();
+          
+        console.log('📊 Expired subscription query result:', { expiredData, expiredError });
+
+        if (expiredError) {
+          // Handle 406 error for expired subscription query too
+          if (expiredError.message.includes('406') || expiredError.message.includes('Not Acceptable') || expiredError.message.includes('user_subscriptions')) {
+            console.warn('⚠️ Table user_subscriptions does not exist for expired query.');
+            setSubscription(null);
+            setHasAccess(false);
+            return;
+          }
+        }
 
         if (expiredData && !expiredError) {
           setSubscription(expiredData);
@@ -104,7 +130,13 @@ export const useSubscription = (user: User | null) => {
         setHasAccess(false);
       }
     } catch (error) {
-      console.error('Error in checkSubscription:', error);
+      console.error('💥 Unexpected error in checkSubscription:', error);
+      
+      // Handle potential 406 errors in catch block too
+      if (error instanceof Error && (error.message.includes('406') || error.message.includes('Not Acceptable') || error.message.includes('user_subscriptions'))) {
+        console.warn('⚠️ Database setup required. Please contact administrator.');
+      }
+      
       setHasAccess(false);
       setSubscription(null);
     } finally {

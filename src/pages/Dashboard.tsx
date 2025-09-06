@@ -17,6 +17,7 @@ import { DigitalMedicalRecordTab } from "@/components/DigitalMedicalRecordTab";
 import { ReportsTab } from "@/components/ReportsTab";
 import { ProceduresTab } from "@/components/ProceduresTab";
 import { MonthlyFeeTab } from "@/components/MonthlyFeeTab";
+import { PaymentTab } from "@/components/PaymentTab";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Clock } from "lucide-react";
@@ -221,13 +222,14 @@ const Dashboard = () => {
         )}
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="patients">Gestão de Pacientes</TabsTrigger>
             <TabsTrigger value="agenda">Agenda Inteligente</TabsTrigger>
             <TabsTrigger value="records">Prontuário Digital</TabsTrigger>
             <TabsTrigger value="procedures">Procedimentos</TabsTrigger>
             <TabsTrigger value="fees">Mensalidades</TabsTrigger>
+            <TabsTrigger value="payments">Pagamentos</TabsTrigger>
             <TabsTrigger value="reports">Relatórios</TabsTrigger>
           </TabsList>
 
@@ -414,6 +416,10 @@ const Dashboard = () => {
 
           <TabsContent value="fees" className="space-y-8">
             <MonthlyFeeTab />
+          </TabsContent>
+
+          <TabsContent value="payments" className="space-y-8">
+            <PaymentTab />
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-8">
